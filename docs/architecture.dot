@@ -1,0 +1,29 @@
+digraph G {
+  rankdir=LR; fontname="Helvetica"; bgcolor="white"; nodesep=0.35; ranksep=0.6;
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, color="#4f46e5", fillcolor="#eef2ff", margin="0.15,0.08"];
+  edge [color="#64748b", fontname="Helvetica", fontsize=9];
+
+  user [label="User\n(browser)", shape=oval, fillcolor="#ffffff"];
+
+  subgraph cluster_ui { label="Streamlit UI  (app.py, ui.py)"; style="rounded,dashed"; color="#94a3b8"; fontname="Helvetica";
+    upload [label="CSV upload\n+ sample data"]; chat [label="Chat\n(history, examples)"]; explorer [label="Data explorer\nquality / anomalies"]; export [label="Report export\nHTML / MD"]; }
+
+  subgraph cluster_core { label="Application core  (src/data_analyst)"; style="rounded,dashed"; color="#94a3b8"; fontname="Helvetica";
+    session [label="AnalystSession"]; loader [label="loader.py\nvalidate · decode · infer types"]; ws [label="Workspace\n(datasets)"];
+    agent [label="DataAnalystAgent\ntool-calling loop · memory\nself-correction on errors", fillcolor="#e0e7ff"];
+    llm [label="LLMClient protocol", fillcolor="#ffffff"];
+    tools [label="ToolExecutor\nlarge data stays local;\nLLM sees previews", fillcolor="#e0e7ff"]; }
+
+  subgraph cluster_tools { label="Tools"; style="rounded,dashed"; color="#94a3b8"; fontname="Helvetica";
+    sql [label="run_sql\nDuckDB, SELECT-only,\nno file access, timeout, cache"]; pd [label="run_pandas\nAST-checked sandbox"]; chart [label="create_chart\nPlotly"];
+    anom [label="detect_anomalies\nrobust z · contextual groups"]; qual [label="data_quality"]; fc [label="forecast\ntrend + seasonality"]; }
+
+  claude [label="Anthropic Claude API\n(tool use)", shape=box3d, fillcolor="#fef3c7", color="#d97706"];
+  demo [label="Offline DemoLLM\n(rule-based, no key)", fillcolor="#f1f5f9", color="#64748b"];
+
+  user -> upload; user -> chat; user -> explorer; user -> export;
+  upload -> loader -> ws; chat -> session -> agent; explorer -> anom; explorer -> qual;
+  agent -> llm; llm -> claude [label="HTTPS"]; llm -> demo [style=dashed, label="no API key"];
+  agent -> tools; tools -> sql; tools -> pd; tools -> chart; tools -> anom; tools -> qual; tools -> fc;
+  sql -> ws [dir=both]; pd -> ws; session -> export;
+}
